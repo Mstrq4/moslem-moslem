@@ -5,9 +5,6 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { LucideLoader2 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import { Button } from "@/components/ui/button";
-import { Textarea } from '@/components/ui/textarea';
 
 interface Dhikr {
   id: string;
@@ -116,82 +113,6 @@ export default function CategoryPage() {
     fetchData();
   }, [categoryId, languageId]);
 
-  const generatePDF = () => {
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    // إضافة الخط العربي
-    pdf.addFont('/fonts/Al-Jazeera-Light.ttf', 'Al-Jazeera', 'normal');
-    pdf.setFont('Al-Jazeera');
-
-    const pageWidth = pdf.internal.pageSize.width;
-    const pageHeight = pdf.internal.pageSize.height;
-    const margin = 20; // هامش 20 مم على جميع الجوانب
-    const contentWidth = pageWidth - 2 * margin;
-    const contentHeight = pageHeight - 2 * margin;
-
-    let yOffset = margin;
-   
-    const addPageIfNeeded = (height: number) => {
-      if (yOffset + height > contentHeight) {
-        pdf.addPage();
-        yOffset = margin;
-      }
-    };
-
-    // إضافة عنوان الصفحة
-    pdf.setFontSize(18);
-    pdf.text(category?.nameNative || 'الأذكار', pageWidth / 2, yOffset, { align: 'center' });
-    yOffset += 15;
-
-    pdf.setFontSize(12);
-
-    const sortedLanguages = Object.keys(dhikrs).sort((a, b) => 
-      a === ARABIC_LANGUAGE_ID ? -1 : b === ARABIC_LANGUAGE_ID ? 1 : 0
-    );
-
- sortedLanguages.forEach((langId) => {
-    dhikrs[langId].forEach((dhikr, index) => {
-      if (langId !== ARABIC_LANGUAGE_ID) {
-        // إضافة النص العربي
-        const arabicText = dhikrs[ARABIC_LANGUAGE_ID]?.[index]?.text || 'النص العربي غير متوفر';
-        pdf.setFontSize(18);
-        pdf.setR2L(true); // تعيين اتجاه النص من اليمين إلى اليسار للعربية
-        const arabicLines = pdf.splitTextToSize(arabicText, contentWidth);
-        
-        addPageIfNeeded(arabicLines.length * 10 + 20); // التحقق من الحاجة لصفحة جديدة
-
-        pdf.text(arabicLines, pageWidth - margin, yOffset, { align: 'right' });
-        yOffset += arabicLines.length * 10 + 5;
-
-        pdf.setFontSize(14);
-        pdf.text(`عدد التكرارات: ${dhikrs[ARABIC_LANGUAGE_ID]?.[index]?.repetitions || 'غير محدد'}`, pageWidth - margin, yOffset, { align: 'right' });
-        yOffset += 10;
-
-        // إضافة النص باللغة الأخرى
-        pdf.setFontSize(16);
-        pdf.setR2L(false); // إعادة تعيين اتجاه النص للغات الأخرى
-        const otherLangLines = pdf.splitTextToSize(dhikr.text, contentWidth);
-        
-        addPageIfNeeded(otherLangLines.length * 8 + 20); // التحقق من الحاجة لصفحة جديدة
-
-        pdf.text(otherLangLines, margin, yOffset);
-        yOffset += otherLangLines.length * 8 + 5;
-
-        pdf.setFontSize(12);
-        pdf.text(`عدد التكرارات: ${dhikr.repetitions || 'غير محدد'}`, margin, yOffset);
-        yOffset += 15;
-      }
-    });
-  });
-
-
-    pdf.save("adhkar.pdf");
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -204,9 +125,6 @@ export default function CategoryPage() {
     return <p className="text-center text-xl text-red-500">{error || 'حدث خطأ غير متوقع'}</p>;
   }
 
-  const sortedLanguages = Object.keys(dhikrs).sort((a, b) => 
-    a === ARABIC_LANGUAGE_ID ? -1 : b === ARABIC_LANGUAGE_ID ? 1 : 0
-  );
   const splitIntoParagraphs = (text: string) => {
     const paragraphs = text.split('\n\n');
     return paragraphs.length > 1 ? paragraphs : [text, ''];
