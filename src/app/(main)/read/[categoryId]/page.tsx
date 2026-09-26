@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from "@/components/ui/card";
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -22,19 +22,17 @@ interface Dhikr {
   uniqueId: number;
 }
 
-export default function ReadPage({ params, searchParams }: { 
-  params: { categoryId: string }, 
-  searchParams: { lang?: string }
-}) {
+export default function ReadPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [dhikrs, setDhikrs] = useState<Dhikr[]>([]);
   const [translations, setTranslations] = useState<{[key: number]: string}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const params = useParams<{ categoryId: string }>();
+  const searchParams = useSearchParams();
 
-  const { categoryId } = params;
-  const languageId = searchParams.lang || "AR";
+  const categoryId = params.categoryId;
+  const languageId = searchParams.get('lang') || 'AR';
 
   useEffect(() => {
     async function fetchData() {
